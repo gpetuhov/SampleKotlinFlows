@@ -4,9 +4,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
 import timber.log.Timber
 
 @FlowPreview    // currently Kotlin Flows are experimental, so we need this annotation
@@ -20,17 +18,22 @@ class MainActivity : AppCompatActivity() {
 
     init {
         // The flow itself will not start emitting,
-        // until we call its terminal operator collect()
-        intFlow = flow {
+        // until we call its terminal operator (for example, collect).
+        val flow = flow {
             Timber.tag(TAG).d("Start flow")
 
             (0..10).forEach {
-                delay(100)
+                delay(500)
                 emit(it)
             }
 
             Timber.tag(TAG).d("Flow complete")
         }
+
+        intFlow = flow
+            .filter { it % 2 == 0 }
+            .map { it * it }
+            .onEach { Timber.tag(TAG).d("Emitting $it") }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
