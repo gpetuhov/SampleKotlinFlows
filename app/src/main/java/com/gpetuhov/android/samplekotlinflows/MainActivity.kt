@@ -33,7 +33,8 @@ class MainActivity : AppCompatActivity() {
         intFlow = flow
             .filter { it % 2 == 0 }
             .map { it * it }
-            .onEach { Timber.tag(TAG).d("Emitting $it") }
+            .onEach { Timber.tag(TAG).d("Emitting $it on ${Thread.currentThread()}") }
+            .flowOn(Dispatchers.Default)    // Without this items will be emitted on the main thread
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,7 +53,11 @@ class MainActivity : AppCompatActivity() {
         GlobalScope.launch(Dispatchers.Main) {
             // We can define our flow once and call collect() multiple times
             // (here - on every button click).
-            intFlow.collect { counter.text = it.toString() }
+            intFlow.collect {
+                // This runs on the main thread, because Dispatchers.Main is used in launch coroutine builder
+                Timber.tag(TAG).d("Collecting $it on ${Thread.currentThread()}")
+                counter.text = it.toString()
+            }
         }
     }
 
