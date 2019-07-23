@@ -17,12 +17,14 @@ class MainActivity : AppCompatActivity() {
     private var intFlow: Flow<Int>
 
     init {
+        // Here we just define flow.
         // The flow itself will not start emitting,
         // until we call its terminal operator (for example, collect).
         val flow = flow {
             Timber.tag(TAG).d("Start flow")
 
             (0..10).forEach {
+                // Emit items with 500 milliseconds delay
                 delay(500)
                 emit(it)
             }
@@ -30,11 +32,16 @@ class MainActivity : AppCompatActivity() {
             Timber.tag(TAG).d("Flow complete")
         }
 
+        // We can transform flow by calling filter, map and other operators
+        // (just like RxJava Observable).
         intFlow = flow
             .filter { it % 2 == 0 }
             .map { it * it }
             .onEach { Timber.tag(TAG).d("Emitting $it on ${Thread.currentThread()}") }
-            .flowOn(Dispatchers.Default)    // Without this items will be emitted on the main thread
+            // Everything, that is above this operator, will run on background thread
+            // in computational (Default) thread pool.
+            // Without this operator, everything will run on the main thread.
+            .flowOn(Dispatchers.Default)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,10 +58,12 @@ class MainActivity : AppCompatActivity() {
         // GlobalScope is used here for simplicity,
         // but activity scope should be used instead.
         GlobalScope.launch(Dispatchers.Main) {
+            // This is where our flow starts emitting items.
             // We can define our flow once and call collect() multiple times
             // (here - on every button click).
             intFlow.collect {
-                // This runs on the main thread, because Dispatchers.Main is used in launch coroutine builder
+                // This runs on the main thread,
+                // because Dispatchers.Main is used in launch coroutine builder.
                 Timber.tag(TAG).d("Collecting $it on ${Thread.currentThread()}")
                 counter.text = it.toString()
             }
